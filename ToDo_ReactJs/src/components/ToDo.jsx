@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
-import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
-import RemoveDoneIcon from "@mui/icons-material/RemoveDone";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
 import "../css/ToDo.css";
+import AllToDo from "./AllToDo";
+import ActiveToDo from "./ActiveToDo";
+import CompletedToDo from "./CompletedToDo";
+import { useDispatch, useSelector } from "react-redux";
+import { addToDoStore, completeToDoStore, removeToDoStore } from "../redux/reducer";
 
 function ToDo() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [allToDo, setAllToDo] = useState([]);
   const [tab, setTab] = useState("ALL");
+  const dispatch = useDispatch()
+  const todo = useSelector((store)=>store.todo)
 
   useEffect(() => {
-    setAllToDo(JSON.parse(localStorage.getItem("todoList")) || []);
-  }, []);
+    setAllToDo(todo.todoList);
+  }, [todo.todoList]);
 
   const getTime = () => {
     const date = new Date();
@@ -37,38 +41,22 @@ function ToDo() {
       status: "ACTIVE",
       addedTime: getTime(),
     };
-    let todoArr = [...allToDo, todoData];
-    setAllToDo(todoArr);
-
-    console.log(todoArr);
-
-    localStorage.setItem("todoList", JSON.stringify(todoArr));
+     
+    dispatch(addToDoStore(todoData))
     setTitle("");
     setDescription("");
   };
 
   function handleToDoDelete(index) {
-    const updatedToDoList = [...allToDo];
-    updatedToDoList.splice(index, 1);
-
-    localStorage.setItem("todoList", JSON.stringify(updatedToDoList));
-    setAllToDo(updatedToDoList);
+    dispatch(removeToDoStore(index))
   }
 
   function handleComplete(index) {
-    const updatedToDoList = allToDo.map((item, i) => {
-      if (index === i) {
-        return {
-          ...item,
-          status: "COMPLETED",
-          completedOn: getTime(),
-        };
-      }
-      return item;
-    });
-
-    localStorage.setItem("todoList", JSON.stringify(updatedToDoList));
-    setAllToDo(updatedToDoList);
+    const data ={
+      index:index,
+      time:getTime()
+    }
+    dispatch(completeToDoStore(data))
   }
 
   return (
@@ -102,92 +90,49 @@ function ToDo() {
           </div>
         </div>
         <div className="btn-area">
-          <button onClick={() => setTab("ALL")}>ALL</button>
-          <button onClick={() => setTab("ACTIVE")}>ACTIVE</button>
-          <button onClick={() => setTab("COMPLETED")}>Completed</button>
+          <button
+            onClick={() => setTab("ALL")}
+            style={tab === "ALL" ? { background: "rgb(0, 230, 122)" } : {}}
+          >
+            ALL
+          </button>
+          <button
+            onClick={() => setTab("ACTIVE")}
+            style={tab === "ACTIVE" ? { background: "rgb(0, 230, 122)" } : {}}
+          >
+            ACTIVE
+          </button>
+          <button
+            onClick={() => setTab("COMPLETED")}
+            style={tab === "COMPLETED" ? { background: "rgb(0, 230, 122)" } : {}}
+          >
+            COMPLETED
+          </button>
         </div>
+
         <div className="todo-list">
-          {tab === "ALL" &&
-            allToDo.map((item, index) => (
-              <div className="todo-list-item" key={index}>
-                <div>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                  <p>
-                    {" "}
-                    <i>
-                      {item.status === "ACTIVE"
-                        ? "Created at " + item.addedTime
-                        : "Completed at " + item.completedOn}
-                    </i>
-                  </p>
-                </div>
-                <div>
-                  <DeleteSweepIcon
-                    title="Delete?"
-                    className="icon"
-                    onClick={() => handleToDoDelete(index)}
-                  />
-                  {item.status === "ACTIVE" ? (
-                    <DoneAllIcon
-                      title="Completed?"
-                      className=" check-icon"
-                      onClick={() => handleComplete(index)}
-                    />
-                  ) : (
-                    <RemoveDoneIcon className=" uncheck-icon" />
-                  )}
-                </div>
-              </div>
-            ))}
+          {tab === "ALL" && (
+            <AllToDo
+              allToDo={allToDo}
+              handleToDoDelete={handleToDoDelete}
+              handleComplete={handleComplete}
+            />
+          )}
 
-          {tab === "ACTIVE" &&
-            allToDo.map(
-              (item, index) =>
-                item.status === "ACTIVE" && (
-                  <div className="todo-list-item" key={index}>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </div>
-                    <div>
-                      <DeleteSweepIcon
-                        title="Delete?"
-                        className="icon"
-                        onClick={() => handleToDoDelete(index)}
-                      />
-                      <DoneAllIcon
-                        title="Completed?"
-                        className=" check-icon"
-                        onClick={() => handleComplete(index)}
-                      />
-                    </div>
-                  </div>
-                )
-            )}
+          {tab === "ACTIVE" && (
+            <ActiveToDo
+              allToDo={allToDo}
+              handleToDoDelete={handleToDoDelete}
+              handleComplete={handleComplete}
+            />
+          )}
 
-          {tab === "COMPLETED" &&
-            allToDo.map(
-              (item, index) =>
-                item.status === "COMPLETED" && (
-                  <div className="todo-list-item" key={index}>
-                    <div>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                      <p>
-                        {" "}
-                        <i>Completed at: {item.completedOn}</i>
-                      </p>
-                    </div>
-                    <div>
-                      <DeleteSweepIcon
-                        className="icon"
-                        onClick={() => handleCompletedTodoDelete(index)}
-                      />
-                    </div>
-                  </div>
-                )
-            )}
+          {tab === "COMPLETED" && (
+            <CompletedToDo
+              allToDo={allToDo}
+              handleToDoDelete={handleToDoDelete}
+            />
+          )}
         </div>
       </div>
     </div>
